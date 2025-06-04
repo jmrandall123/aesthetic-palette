@@ -35,7 +35,7 @@ class ImagePaletteGenerator:
                 img = img.convert("RGB")
             return img
         except Exception as e:
-            raise Exception(f"Error loading image: {e}")
+            raise Exception(f"Error loading image: {e}") from e
 
     def crop_to_aspect_ratio(self, img: Image.Image) -> Image.Image:
         """Crop image to target aspect ratio from center."""

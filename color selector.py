@@ -61,9 +61,13 @@ class ImagePaletteGenerator:
         # Resize for faster processing while maintaining color distribution
         img_small = img.resize((150, 150), Image.Resampling.LANCZOS)
         pixels = np.float32(img_small).reshape(-1, 3)
-        
+
+        # Adjust cluster count if the image has fewer unique colors than requested
+        unique_pixels = np.unique(pixels, axis=0)
+        n_clusters = min(self.num_colors, len(unique_pixels))
+
         # Use k-means++ initialization for better color selection
-        kmeans = KMeans(n_clusters=self.num_colors, n_init=10, random_state=42)
+        kmeans = KMeans(n_clusters=n_clusters, n_init=10, random_state=42)
         kmeans.fit(pixels)
         
         # Sort colors by brightness for aesthetic ordering

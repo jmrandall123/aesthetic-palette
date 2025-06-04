@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw
 from sklearn.cluster import KMeans
 import numpy as np
 from typing import Tuple, List
+import argparse
 import os
 
 class ImagePaletteGenerator:
@@ -106,6 +107,17 @@ class ImagePaletteGenerator:
         
         return palette
 
+    def colors_to_hex(self, colors: List[Tuple[int, int, int]]) -> List[str]:
+        """Convert a list of RGB tuples to hex color strings."""
+        return [f"#{r:02x}{g:02x}{b:02x}" for r, g, b in colors]
+
+    def save_hex_colors(self, colors: List[Tuple[int, int, int]], file_path: str) -> None:
+        """Save hex color codes to a text file, one per line."""
+        hex_colors = self.colors_to_hex(colors)
+        with open(file_path, "w", encoding="utf-8") as f:
+            for code in hex_colors:
+                f.write(code + "\n")
+
     def combine_image_and_palette(self, img: Image.Image, palette: Image.Image) -> Image.Image:
         """Combine main image and color palette."""
         spacing = self.padding
@@ -119,7 +131,12 @@ class ImagePaletteGenerator:
         
         return canvas
 
-    def process_image(self, image_path: str, output_path: str = None) -> Image.Image:
+    def process_image(
+        self,
+        image_path: str,
+        output_path: str | None = None,
+        colors_output_path: str | None = None,
+    ) -> Image.Image:
         """Process image and generate palette."""
         try:
             # Load and prepare image
@@ -137,6 +154,10 @@ class ImagePaletteGenerator:
             if output_path:
                 final_image.save(output_path, "JPEG", quality=95, dpi=(300, 300))
                 print(f"Saved final image as '{output_path}'")
+
+            if colors_output_path:
+                self.save_hex_colors(colors, colors_output_path)
+                print(f"Saved palette colors to '{colors_output_path}'")
             
             return final_image
             
@@ -144,17 +165,39 @@ class ImagePaletteGenerator:
             print(f"Error processing image: {e}")
             raise
 
-def main():
-    # Example usage
-    generator = ImagePaletteGenerator()
-    image_path = input("Enter the path to your image file: ").strip('"')
-    output_path = "final_image_cinematic_with_palette.jpg"
-    
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate a color palette from an image.")
+    parser.add_argument("image", help="Path to the source image")
+    parser.add_argument("--output", help="Path to save the final image with palette")
+    parser.add_argument("--colors-out", help="File to save hex palette colors")
+    parser.add_argument("--width", type=int, default=750, help="Output image width")
+    parser.add_argument("--num-colors", type=int, default=10, help="Number of colors in the palette")
+    parser.add_argument("--padding", type=int, default=5, help="Padding between palette swatches")
+    parser.add_argument("--palette-height-ratio", type=float, default=0.35, help="Palette height relative to image")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    generator = ImagePaletteGenerator(
+        output_width=args.width,
+        num_colors=args.num_colors,
+        padding=args.padding,
+        palette_height_ratio=args.palette_height_ratio,
+    )
+
     try:
-        final_image = generator.process_image(image_path, output_path)
-        final_image.show()
+        final_image = generator.process_image(
+            args.image,
+            output_path=args.output,
+            colors_output_path=args.colors_out,
+        )
+        if not args.output:
+            final_image.show()
     except Exception as e:
         print(f"Failed to process image: {e}")
 
 if __name__ == "__main__":
     main()
+

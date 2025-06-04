@@ -62,7 +62,7 @@ class ImagePaletteGenerator:
         img_small = img.resize((150, 150), Image.Resampling.LANCZOS)
         pixels = np.float32(img_small).reshape(-1, 3)
         
-        # Use k-means++ initialization for better color selection
+        # scikit-learn uses k-means++ init by default
         kmeans = KMeans(n_clusters=self.num_colors, n_init=10, random_state=42)
         kmeans.fit(pixels)
         
